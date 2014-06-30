@@ -7,7 +7,7 @@
 .align 4
 
 maze_gameover_width:
-	.int	30
+    .int    30
 maze_gameover:
 .ascii "##############################"
 .ascii "OOOOOOOOOOOOOOOOOOOOOOOOOOOOOO"
@@ -32,7 +32,7 @@ maze_gameover:
 .align 4
 
 maze_gamewon_width:
-	.int	30
+    .int    30
 maze_gamewon:
 .ascii "##############################"
 .ascii "OOOOOOOOOOOOOOOOOOOOOOOOOOOOOO"

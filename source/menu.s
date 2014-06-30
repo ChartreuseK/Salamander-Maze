@@ -119,13 +119,13 @@ mainMenu:
     mov     r4, #0                      @ We're on the first menu element
     
 menuLoop:    
-    bl		snes_getstate               @ Grab the button pressed
-	
-	tst		r0, #SNES_Up
-	beq		menuUp
-	
-	tst 	r0, #SNES_Down
-	beq		menuDown
+    bl      snes_getstate               @ Grab the button pressed
+    
+    tst     r0, #SNES_Up
+    beq     menuUp
+    
+    tst     r0, #SNES_Down
+    beq     menuDown
     
     tst     r0, #SNES_Right
     beq     menuRight
@@ -133,8 +133,8 @@ menuLoop:
     tst     r0, #SNES_Left
     beq     menuLeft
     
-    tst		r0, #SNES_A                 @ If we get an A
-	moveq   r0, r4                      @ Move the currently selected item to r0
+    tst     r0, #SNES_A                 @ If we get an A
+    moveq   r0, r4                      @ Move the currently selected item to r0
     popeq   { r4, pc }                  @ to return it
     
     b       menuLoop                    @ Keep looping otherwise
@@ -327,15 +327,15 @@ gameMenu:
     bl      waitForRelease              @ Wait for the user to unpress start
     
 gamemenuLoop:    
-    bl		snes_getstate
-	
-	tst		r0, #SNES_Up
-	moveq	r0, #0
-	beq		gamemenuUp
-	
-	tst 	r0, #SNES_Down
-	moveq	r0, #2
-	beq		gamemenuDown
+    bl      snes_getstate
+    
+    tst     r0, #SNES_Up
+    moveq   r0, #0
+    beq     gamemenuUp
+    
+    tst     r0, #SNES_Down
+    moveq   r0, #2
+    beq     gamemenuDown
     
     tst     r0, #SNES_Left
     beq     gamemenuLeft
@@ -346,8 +346,8 @@ gamemenuLoop:
     tst     r0, #SNES_B
     beq     gamemenuB
 
-    tst		r0, #SNES_A
-	beq     gamemenuAction
+    tst     r0, #SNES_A
+    beq     gamemenuAction
     
     tst     r0, #SNES_St
     beq     gamemenuClose
@@ -370,9 +370,9 @@ gamemenuClose:
     movne   r5, #0                          @ Failed at pressing start to end the code...
     bleq    konamiCode                      @ Successfully entered the code, woo!
 
-    bl		drawBoard						@ Render the entire board
-	
-	bl		drawPlayer						@ Render the player
+    bl      drawBoard                       @ Render the entire board
+    
+    bl      drawPlayer                      @ Render the player
     
     bl      waitForRelease
     

@@ -33,21 +33,28 @@ test:
 
 @@ Was used during development and handed in with assignment
 @@ jtag.s was removed before posting since the code was notmine
-@	bl		EnableJTAG
+@   bl      EnableJTAG
     
-	bl		framebuffer_init
-	bl		snes_init    
+    bl      framebuffer_init
+    bl      snes_init    
     bl      clearScr
 
+    @ Fix a long standing bug where quitting the game required replacing kernel.img
+    @ Set the current game state to main menu
+    ldr     r0, =game
+    mov     r1, #STATE_MAIN_MENU
+    str     r1, [r0, #STATE]            @ Grab the current game state
+     
+
 mainLoop:                               @ The main program loop
-    bl  	handleInput                 @ We check for input and handle it
-	bl		checkState                  
-	
-	b 		mainLoop
+    bl      handleInput                 @ We check for input and handle it
+    bl      checkState                  
+    
+    b       mainLoop
 
 
 haltLoop$:
-	b		haltLoop$
+    b       haltLoop$
 
 
 
@@ -171,17 +178,17 @@ fiq_handler:        .word fiqHalt$
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 undefinedHalt$:                         
-	b		undefinedHalt$
+    b       undefinedHalt$
 swiHalt$:
-	b		swiHalt$
+    b       swiHalt$
 prefetechHalt$:
-	b		prefetechHalt$
+    b       prefetechHalt$
 dataHalt$:
-	b		dataHalt$
+    b       dataHalt$
 unusedHalt$:
-	b		unusedHalt$
+    b       unusedHalt$
 fiqHalt$:
-	b		fiqHalt$
+    b       fiqHalt$
 
 
     

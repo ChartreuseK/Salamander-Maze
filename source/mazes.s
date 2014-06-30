@@ -28,7 +28,7 @@ num_levels: .int 8
 @    D   -    Door Wall tile
 @    X   -    Exit Door Wall tile
 @        -    Floor tile
-@    S	 -    Start Floor tile
+@    S   -    Start Floor tile
 @    K   -    Key Floor tile
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
@@ -37,26 +37,26 @@ num_levels: .int 8
 @ Maze 1, 16x16
 @@@@@@@@@@@@@@@@@@@@@@@@@@@
 maze1:
-	.int	16                  @ Width
-	.int	150                 @ Actions
+    .int    16                  @ Width
+    .int    150                 @ Actions
     .int    1                   @ Draw the maze with large 32x32 tiles
 maze1_board:
-	.ascii "################"
-	.ascii "#S#        #  K#"
-	.ascii "# # # #### # ###"
-	.ascii "#K# # #    #   #"
-	.ascii "# D # # ###### #"
-	.ascii "##### #   #    #"
-	.ascii "#K    ### D ####"
-	.ascii "# #####KD ####K#"
-	.ascii "# #   # # D  # #"
-	.ascii "#   # # # ## # #"
-	.ascii "# # #   # #    #"
-	.ascii "### ##### # ####"
-	.ascii "#X#KD     #    #"
-	.ascii "# ######### ## #"
-	.ascii "#         D    #"
-	.asciz "################"
+    .ascii "################"
+    .ascii "#S#        #  K#"
+    .ascii "# # # #### # ###"
+    .ascii "#K# # #    #   #"
+    .ascii "# D # # ###### #"
+    .ascii "##### #   #    #"
+    .ascii "#K    ### D ####"
+    .ascii "# #####KD ####K#"
+    .ascii "# #   # # D  # #"
+    .ascii "#   # # # ## # #"
+    .ascii "# # #   # #    #"
+    .ascii "### ##### # ####"
+    .ascii "#X#KD     #    #"
+    .ascii "# ######### ## #"
+    .ascii "#         D    #"
+    .asciz "################"
 
 
 .align 4
@@ -64,8 +64,8 @@ maze1_board:
 @ Maze 2, 21x21
 @@@@@@@@@@@@@@@@@@@@@@@@@@@
 maze2:
-	.int    21                  @ Width
-	.int    196                 @ Actions
+    .int    21                  @ Width
+    .int    196                 @ Actions
     .int    1                   @ Draw the maze with large 32x32 tiles
 maze2_board:
     .ascii "#####################"

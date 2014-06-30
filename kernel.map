@@ -15,7 +15,6 @@ LOAD build/game.o
 LOAD build/gamestate.o
 LOAD build/gpio.o
 LOAD build/graphics.o
-LOAD build/jtag.o
 LOAD build/mailbox.o
 LOAD build/main.o
 LOAD build/mazes.o
@@ -45,7 +44,6 @@ LOAD build/uart.o
  .data          0x00009180        0x0 build/gamestate.o
  .data          0x00009180        0x0 build/gpio.o
  .data          0x00009180        0x0 build/graphics.o
- .data          0x00009180        0x0 build/jtag.o
  .data          0x00009180        0x0 build/mailbox.o
  .data          0x00009180        0x0 build/main.o
  .data          0x00009180        0x0 build/mazes.o
@@ -64,7 +62,7 @@ LOAD build/uart.o
 .igot.plt       0x00009210        0x0
  .igot.plt      0x00000000        0x0 build/board.o
 
-.text           0x00009210    0x27768
+.text           0x00009210    0x276e8
  *.c.o(.text)
  *(.text)
  .text          0x00009210      0x300 build/board.o
@@ -114,115 +112,112 @@ LOAD build/uart.o
                 0x0000b5bc                putTile_32x32
                 0x0000b630                putImage
                 0x0000b678                putImage_double
- .text          0x0000b6f8       0x8c build/jtag.o
-                0x0000b6f8                EnableJTAG
- .text          0x0000b784       0x94 build/mailbox.o
-                0x0000b784                framebuffer_init
- *fill*         0x0000b818        0x8 3f3f3f3f
- .text          0x0000b820      0x100 build/main.o
- .text          0x0000b920     0x1570 build/mazes.o
-                0x0000b920                levels
-                0x0000b948                num_levels
- .text          0x0000ce90      0x460 build/menu.o
-                0x0000ce90                mainMenu
-                0x0000d088                gameMenu
- .text          0x0000d2f0      0x790 build/messages_maze.o
-                0x0000d2f0                maze_gameover_width
-                0x0000d2f4                maze_gameover
-                0x0000d530                maze_gamewon_width
-                0x0000d534                maze_gamewon
-                0x0000d770                titlemenu_bg_width
-                0x0000d774                titlemenu_bg
- .text          0x0000da80      0x430 build/player.o
-                0x0000da80                findStart
-                0x0000dad4                drawPlayer
-                0x0000dbac                movePlayer
-                0x0000dcb4                openDoor
-                0x0000ddd8                writeActionsLeft
-                0x0000de14                writeKeysLeft
- .text          0x0000deb0       0xd4 build/string.o
-                0x0000deb0                strcmp
-                0x0000dee8                strncmp
-                0x0000df30                strcpy
-                0x0000df44                strlen
-                0x0000df60                strcat
- *fill*         0x0000df84        0xc 3f3f3f3f
- .text          0x0000df90     0x2200 build/tiles.o
-                0x0000df90                tile_redkey_ground
-                0x0000e190                tile_yellowkey_ground
-                0x0000e390                tile_greenkey_ground
-                0x0000e590                tile_redkey
-                0x0000e790                tile_yellowkey
-                0x0000e990                tile_greenkey
-                0x0000eb90                tile_reddoor
-                0x0000ed90                tile_yellowdoor
-                0x0000ef90                tile_greendoor
-                0x0000f190                tile_floor
-                0x0000f390                tile_wall
-                0x0000f590                tile_exit
-                0x0000f790                tile_start
-                0x0000f990                tile_player_up
-                0x0000fb90                tile_player_right
-                0x0000fd90                tile_player_down
-                0x0000ff90                tile_player_left
- .text          0x00010190      0x1d8 build/timer.o
-                0x00010190                st_sleep
-                0x000101ac                initSecondTimer
-                0x000101cc                timerFired
-                0x00010254                resetTimer
-                0x00010278                hideTimer
-                0x000102a8                showTimer
-                0x000102fc                pauseTimer
-                0x00010324                unpauseTimer
- .text          0x00010368    0x20008 build/Title.o
-                0x00010368                title_menu
- .text          0x00030370      0x608 build/uart.o
-                0x00030370                uart_init
-                0x000308f0                uart_readb
-                0x0003090c                uart_writeb
-                0x00030928                uart_print
+ .text          0x0000b6f8       0x94 build/mailbox.o
+                0x0000b6f8                framebuffer_init
+ *fill*         0x0000b78c        0x4 3f3f3f3f
+ .text          0x0000b790      0x110 build/main.o
+ .text          0x0000b8a0     0x1570 build/mazes.o
+                0x0000b8a0                levels
+                0x0000b8c8                num_levels
+ .text          0x0000ce10      0x460 build/menu.o
+                0x0000ce10                mainMenu
+                0x0000d008                gameMenu
+ .text          0x0000d270      0x790 build/messages_maze.o
+                0x0000d270                maze_gameover_width
+                0x0000d274                maze_gameover
+                0x0000d4b0                maze_gamewon_width
+                0x0000d4b4                maze_gamewon
+                0x0000d6f0                titlemenu_bg_width
+                0x0000d6f4                titlemenu_bg
+ .text          0x0000da00      0x430 build/player.o
+                0x0000da00                findStart
+                0x0000da54                drawPlayer
+                0x0000db2c                movePlayer
+                0x0000dc34                openDoor
+                0x0000dd58                writeActionsLeft
+                0x0000dd94                writeKeysLeft
+ .text          0x0000de30       0xd4 build/string.o
+                0x0000de30                strcmp
+                0x0000de68                strncmp
+                0x0000deb0                strcpy
+                0x0000dec4                strlen
+                0x0000dee0                strcat
+ *fill*         0x0000df04        0xc 3f3f3f3f
+ .text          0x0000df10     0x2200 build/tiles.o
+                0x0000df10                tile_redkey_ground
+                0x0000e110                tile_yellowkey_ground
+                0x0000e310                tile_greenkey_ground
+                0x0000e510                tile_redkey
+                0x0000e710                tile_yellowkey
+                0x0000e910                tile_greenkey
+                0x0000eb10                tile_reddoor
+                0x0000ed10                tile_yellowdoor
+                0x0000ef10                tile_greendoor
+                0x0000f110                tile_floor
+                0x0000f310                tile_wall
+                0x0000f510                tile_exit
+                0x0000f710                tile_start
+                0x0000f910                tile_player_up
+                0x0000fb10                tile_player_right
+                0x0000fd10                tile_player_down
+                0x0000ff10                tile_player_left
+ .text          0x00010110      0x1d8 build/timer.o
+                0x00010110                st_sleep
+                0x0001012c                initSecondTimer
+                0x0001014c                timerFired
+                0x000101d4                resetTimer
+                0x000101f8                hideTimer
+                0x00010228                showTimer
+                0x0001027c                pauseTimer
+                0x000102a4                unpauseTimer
+ .text          0x000102e8    0x20008 build/Title.o
+                0x000102e8                title_menu
+ .text          0x000302f0      0x608 build/uart.o
+                0x000302f0                uart_init
+                0x00030870                uart_readb
+                0x0003088c                uart_writeb
+                0x000308a8                uart_print
 OUTPUT(build/output.elf elf32-littlearm)
 
-.glue_7         0x00030978        0x0
+.glue_7         0x000308f8        0x0
  .glue_7        0x00000000        0x0 linker stubs
 
-.glue_7t        0x00030978        0x0
+.glue_7t        0x000308f8        0x0
  .glue_7t       0x00000000        0x0 linker stubs
 
-.vfp11_veneer   0x00030978        0x0
+.vfp11_veneer   0x000308f8        0x0
  .vfp11_veneer  0x00000000        0x0 linker stubs
 
-.v4_bx          0x00030978        0x0
+.v4_bx          0x000308f8        0x0
  .v4_bx         0x00000000        0x0 linker stubs
 
-.iplt           0x00030978        0x0
+.iplt           0x000308f8        0x0
  .iplt          0x00000000        0x0 build/board.o
 
-.rel.dyn        0x00030978        0x0
+.rel.dyn        0x000308f8        0x0
  .rel.iplt      0x00000000        0x0 build/board.o
 
-.bss            0x00030978        0x0
- .bss           0x00030978        0x0 build/board.o
- .bss           0x00030978        0x0 build/controller.o
- .bss           0x00030978        0x0 build/defines.o
- .bss           0x00030978        0x0 build/font.o
- .bss           0x00030978        0x0 build/framebuffer_struct.o
- .bss           0x00030978        0x0 build/game.o
- .bss           0x00030978        0x0 build/gamestate.o
- .bss           0x00030978        0x0 build/gpio.o
- .bss           0x00030978        0x0 build/graphics.o
- .bss           0x00030978        0x0 build/jtag.o
- .bss           0x00030978        0x0 build/mailbox.o
- .bss           0x00030978        0x0 build/main.o
- .bss           0x00030978        0x0 build/mazes.o
- .bss           0x00030978        0x0 build/menu.o
- .bss           0x00030978        0x0 build/messages_maze.o
- .bss           0x00030978        0x0 build/player.o
- .bss           0x00030978        0x0 build/string.o
- .bss           0x00030978        0x0 build/tiles.o
- .bss           0x00030978        0x0 build/timer.o
- .bss           0x00030978        0x0 build/Title.o
- .bss           0x00030978        0x0 build/uart.o
+.bss            0x000308f8        0x0
+ .bss           0x000308f8        0x0 build/board.o
+ .bss           0x000308f8        0x0 build/controller.o
+ .bss           0x000308f8        0x0 build/defines.o
+ .bss           0x000308f8        0x0 build/font.o
+ .bss           0x000308f8        0x0 build/framebuffer_struct.o
+ .bss           0x000308f8        0x0 build/game.o
+ .bss           0x000308f8        0x0 build/gamestate.o
+ .bss           0x000308f8        0x0 build/gpio.o
+ .bss           0x000308f8        0x0 build/graphics.o
+ .bss           0x000308f8        0x0 build/mailbox.o
+ .bss           0x000308f8        0x0 build/main.o
+ .bss           0x000308f8        0x0 build/mazes.o
+ .bss           0x000308f8        0x0 build/menu.o
+ .bss           0x000308f8        0x0 build/messages_maze.o
+ .bss           0x000308f8        0x0 build/player.o
+ .bss           0x000308f8        0x0 build/string.o
+ .bss           0x000308f8        0x0 build/tiles.o
+ .bss           0x000308f8        0x0 build/timer.o
+ .bss           0x000308f8        0x0 build/Title.o
+ .bss           0x000308f8        0x0 build/uart.o
 
 .ARM.attributes
                 0x00000000       0x1f
@@ -245,79 +240,74 @@ OUTPUT(build/output.elf elf32-littlearm)
  .ARM.attributes
                 0x000000f8       0x1f build/graphics.o
  .ARM.attributes
-                0x00000117       0x1f build/jtag.o
+                0x00000117       0x1f build/mailbox.o
  .ARM.attributes
-                0x00000136       0x1f build/mailbox.o
+                0x00000136       0x1f build/main.o
  .ARM.attributes
-                0x00000155       0x1f build/main.o
+                0x00000155       0x1f build/mazes.o
  .ARM.attributes
-                0x00000174       0x1f build/mazes.o
+                0x00000174       0x1f build/menu.o
  .ARM.attributes
-                0x00000193       0x1f build/menu.o
+                0x00000193       0x1f build/messages_maze.o
  .ARM.attributes
-                0x000001b2       0x1f build/messages_maze.o
+                0x000001b2       0x1f build/player.o
  .ARM.attributes
-                0x000001d1       0x1f build/player.o
+                0x000001d1       0x1f build/string.o
  .ARM.attributes
-                0x000001f0       0x1f build/string.o
+                0x000001f0       0x1f build/tiles.o
  .ARM.attributes
-                0x0000020f       0x1f build/tiles.o
+                0x0000020f       0x1f build/timer.o
  .ARM.attributes
-                0x0000022e       0x1f build/timer.o
+                0x0000022e       0x1f build/Title.o
  .ARM.attributes
-                0x0000024d       0x1f build/Title.o
- .ARM.attributes
-                0x0000026c       0x1f build/uart.o
+                0x0000024d       0x1f build/uart.o
 
-.debug_line     0x00000000      0xb18
+.debug_line     0x00000000      0xabd
  .debug_line    0x00000000      0x112 build/board.o
  .debug_line    0x00000112       0x85 build/controller.o
  .debug_line    0x00000197       0x89 build/font.o
  .debug_line    0x00000220      0x100 build/game.o
  .debug_line    0x00000320       0x6c build/gpio.o
  .debug_line    0x0000038c      0x193 build/graphics.o
- .debug_line    0x0000051f       0x61 build/jtag.o
- .debug_line    0x00000580       0x68 build/mailbox.o
- .debug_line    0x000005e8       0x8c build/main.o
- .debug_line    0x00000674      0x169 build/menu.o
- .debug_line    0x000007dd      0x155 build/player.o
- .debug_line    0x00000932       0x7b build/string.o
- .debug_line    0x000009ad       0xc2 build/timer.o
- .debug_line    0x00000a6f       0xa9 build/uart.o
+ .debug_line    0x0000051f       0x68 build/mailbox.o
+ .debug_line    0x00000587       0x92 build/main.o
+ .debug_line    0x00000619      0x169 build/menu.o
+ .debug_line    0x00000782      0x155 build/player.o
+ .debug_line    0x000008d7       0x7b build/string.o
+ .debug_line    0x00000952       0xc2 build/timer.o
+ .debug_line    0x00000a14       0xa9 build/uart.o
 
-.debug_info     0x00000000      0x4b5
+.debug_info     0x00000000      0x460
  .debug_info    0x00000000       0x56 build/board.o
  .debug_info    0x00000056       0x5b build/controller.o
  .debug_info    0x000000b1       0x55 build/font.o
  .debug_info    0x00000106       0x55 build/game.o
  .debug_info    0x0000015b       0x55 build/gpio.o
  .debug_info    0x000001b0       0x59 build/graphics.o
- .debug_info    0x00000209       0x55 build/jtag.o
- .debug_info    0x0000025e       0x58 build/mailbox.o
- .debug_info    0x000002b6       0x51 build/main.o
- .debug_info    0x00000307       0x55 build/menu.o
- .debug_info    0x0000035c       0x57 build/player.o
- .debug_info    0x000003b3       0x57 build/string.o
- .debug_info    0x0000040a       0x56 build/timer.o
- .debug_info    0x00000460       0x55 build/uart.o
+ .debug_info    0x00000209       0x58 build/mailbox.o
+ .debug_info    0x00000261       0x51 build/main.o
+ .debug_info    0x000002b2       0x55 build/menu.o
+ .debug_info    0x00000307       0x57 build/player.o
+ .debug_info    0x0000035e       0x57 build/string.o
+ .debug_info    0x000003b5       0x56 build/timer.o
+ .debug_info    0x0000040b       0x55 build/uart.o
 
-.debug_abbrev   0x00000000      0x116
+.debug_abbrev   0x00000000      0x102
  .debug_abbrev  0x00000000       0x14 build/board.o
  .debug_abbrev  0x00000014       0x14 build/controller.o
  .debug_abbrev  0x00000028       0x14 build/font.o
  .debug_abbrev  0x0000003c       0x14 build/game.o
  .debug_abbrev  0x00000050       0x14 build/gpio.o
  .debug_abbrev  0x00000064       0x14 build/graphics.o
- .debug_abbrev  0x00000078       0x14 build/jtag.o
- .debug_abbrev  0x0000008c       0x14 build/mailbox.o
- .debug_abbrev  0x000000a0       0x12 build/main.o
- .debug_abbrev  0x000000b2       0x14 build/menu.o
- .debug_abbrev  0x000000c6       0x14 build/player.o
- .debug_abbrev  0x000000da       0x14 build/string.o
- .debug_abbrev  0x000000ee       0x14 build/timer.o
- .debug_abbrev  0x00000102       0x14 build/uart.o
+ .debug_abbrev  0x00000078       0x14 build/mailbox.o
+ .debug_abbrev  0x0000008c       0x12 build/main.o
+ .debug_abbrev  0x0000009e       0x14 build/menu.o
+ .debug_abbrev  0x000000b2       0x14 build/player.o
+ .debug_abbrev  0x000000c6       0x14 build/string.o
+ .debug_abbrev  0x000000da       0x14 build/timer.o
+ .debug_abbrev  0x000000ee       0x14 build/uart.o
 
-.debug_aranges  0x00000000      0x1c8
+.debug_aranges  0x00000000      0x1a8
  .debug_aranges
                 0x00000000       0x20 build/board.o
  .debug_aranges
@@ -331,21 +321,19 @@ OUTPUT(build/output.elf elf32-littlearm)
  .debug_aranges
                 0x000000a0       0x20 build/graphics.o
  .debug_aranges
-                0x000000c0       0x20 build/jtag.o
+                0x000000c0       0x20 build/mailbox.o
  .debug_aranges
-                0x000000e0       0x20 build/mailbox.o
+                0x000000e0       0x28 build/main.o
  .debug_aranges
-                0x00000100       0x28 build/main.o
+                0x00000108       0x20 build/menu.o
  .debug_aranges
-                0x00000128       0x20 build/menu.o
+                0x00000128       0x20 build/player.o
  .debug_aranges
-                0x00000148       0x20 build/player.o
+                0x00000148       0x20 build/string.o
  .debug_aranges
-                0x00000168       0x20 build/string.o
+                0x00000168       0x20 build/timer.o
  .debug_aranges
-                0x00000188       0x20 build/timer.o
- .debug_aranges
-                0x000001a8       0x20 build/uart.o
+                0x00000188       0x20 build/uart.o
 
 .debug_ranges   0x00000000       0x20
  .debug_ranges  0x00000000       0x20 build/main.o

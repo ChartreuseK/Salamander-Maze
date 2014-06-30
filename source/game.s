@@ -19,9 +19,9 @@
 @  initialized the gameboard and draws to the screen
 @@@@
 initGame:
-	push	{ lr }
-	
-	ldr		r2, =levels
+    push    { lr }
+    
+    ldr     r2, =levels
     ldr     r3, =game
     ldr     r3, [r3, #LEVEL]
     add     r2, r2, r3, lsl #2              @ Use the level number to index the
@@ -33,41 +33,41 @@ initGame:
     add     r1, r1, #CURMAZE                @ We need the curmaze sub-structure
     str     r0, [r1, #CURMAZE_SIZE]         @ And store it to the size
     
-	ldr		r0, [r2, #MAZE_WIDTH]           @ We need the maze width
+    ldr     r0, [r2, #MAZE_WIDTH]           @ We need the maze width
     
-	add		r1, r2, #MAZE_BOARD	            @ And the maze itself to load the maze
+    add     r1, r2, #MAZE_BOARD             @ And the maze itself to load the maze
     
     push    { r2 }
-	bl		loadBoard						@ Load board will copy the
-											@ specified board to the game
+    bl      loadBoard                       @ Load board will copy the
+                                            @ specified board to the game
     pop     { r2 }
     
     
-	ldr		r1, =game
-	add		r1, #PLAYER
-	
-    
-    ldr		r2, [r2, #MAZE_MOVES]
-	str		r2, [r1, #PLAYER_ACTIONSLEFT]	@ Maze's starting moves
+    ldr     r1, =game
+    add     r1, #PLAYER
     
     
-	mov		r0, #0			
-	str		r0, [r1, #PLAYER_KEYS]			@ No keys
-	
-	mov		r0, #2							
-	str		r0, [r1, #PLAYER_ORIENTATION]	@ Looking downward
-	
-	
-	
-	bl		findStart						@ Find the player's starting 
-											@ square and set the position.
+    ldr     r2, [r2, #MAZE_MOVES]
+    str     r2, [r1, #PLAYER_ACTIONSLEFT]   @ Maze's starting moves
+    
+    
+    mov     r0, #0          
+    str     r0, [r1, #PLAYER_KEYS]          @ No keys
+    
+    mov     r0, #2                          
+    str     r0, [r1, #PLAYER_ORIENTATION]   @ Looking downward
+    
+    
+    
+    bl      findStart                       @ Find the player's starting 
+                                            @ square and set the position.
     bl      clearScr                        @ Clear the screen
                                         
-	bl		drawBoard						@ Render the entire board
-	
-	bl		drawPlayer						@ Render the player
+    bl      drawBoard                       @ Render the entire board
     
-	bl      writeActionsLeft                
+    bl      drawPlayer                      @ Render the player
+    
+    bl      writeActionsLeft                
     
     bl      writeKeysLeft
     
@@ -89,24 +89,24 @@ initGame:
     bl      showTimer                   @ Show the time elapsed counter in the top left
     bl      unpauseTimer                @ Make sure it isn't paused
     
-	pop		{ pc }
+    pop     { pc }
 @@ END INITGAME
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 
 
-	
-	
-	
-	
-	
-	
+    
+    
+    
+    
+    
+    
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @ checkState
 @@@@
 checkState:
-	push    { r4, lr }
+    push    { r4, lr }
     
     ldr     r4, =game
     ldr     r1, [r4, #STATE]            @ Grab the current game state
@@ -132,12 +132,12 @@ state_gamequit:
     @@ Should not get here, unknown state
  
 checkState_end:   
-	pop     { r4, pc }
+    pop     { r4, pc }
 
 state_ingame:
     add     r2, r4, #PLAYER
     
-    ldr		r0, [r2, #PLAYER_ACTIONSLEFT] 	
+    ldr     r0, [r2, #PLAYER_ACTIONSLEFT]   
     
     cmp     r0, #0                      @ Check if we ran out of actions
     moveq   r0, #STATE_GAME_LOST        @ If we have the game is lost
@@ -211,7 +211,7 @@ state_game_won:
     ldr     r1, =maze_gamewon           @ Use a special maze to write out the
                                         @ Game Won message
     mov     r2, #1                      @ Using large tiles
-    bl		drawSpecialMaze
+    bl      drawSpecialMaze
     
     ldr     r0, =congratulations_str    @ Write out congratulations string to the
     bl      writeMsg                    @ Message area
@@ -253,7 +253,7 @@ state_game_lost:
     ldr     r1, =maze_gameover          @ Use a special maze to write out the
                                         @ Game Over message
     mov     r2, #1                      @ Using large tiles
-    bl		drawSpecialMaze
+    bl      drawSpecialMaze
     
     
     ldr     r0, =ungratulations_str     @ Write out the game lost message to the
@@ -298,48 +298,48 @@ state_game_lost:
 @ handleInput
 @@@@
 handleInput:
-	push	{ lr }
+    push    { lr }
 
-	bl		snes_getstate
-	
-	tst		r0, #SNES_Up
-	moveq	r0, #0
-	beq		move
-	
-	tst 	r0, #SNES_Down
-	moveq	r0, #2
-	beq		move
-	
-	tst 	r0, #SNES_Left
-	moveq	r0, #3
-	beq		move
-	
-	tst 	r0, #SNES_Right
-	moveq	r0, #1
-	beq		move
-	
-	tst		r0, #SNES_A
-	beq		door
-	
-    tst		r0, #SNES_St
+    bl      snes_getstate
+    
+    tst     r0, #SNES_Up
+    moveq   r0, #0
+    beq     move
+    
+    tst     r0, #SNES_Down
+    moveq   r0, #2
+    beq     move
+    
+    tst     r0, #SNES_Left
+    moveq   r0, #3
+    beq     move
+    
+    tst     r0, #SNES_Right
+    moveq   r0, #1
+    beq     move
+    
+    tst     r0, #SNES_A
+    beq     door
+    
+    tst     r0, #SNES_St
     ldreq   r1, =game
     moveq   r2, #STATE_GAME_MENU
     streq   r2, [r1, #STATE]
     
 
-	
-	pop		{ pc }
+    
+    pop     { pc }
 move:
-	bl		movePlayer
-	
-	bl		waitForRelease
-	pop		{ pc }
+    bl      movePlayer
+    
+    bl      waitForRelease
+    pop     { pc }
 
 
 door:
-	bl		openDoor
-    bl		waitForRelease
-	pop		{ pc }
+    bl      openDoor
+    bl      waitForRelease
+    pop     { pc }
 @@ END HANDLEINPUT
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 

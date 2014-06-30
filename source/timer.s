@@ -20,14 +20,14 @@
 .include "defines.s"
 
 
-.equ	SYSTIMER_BASE,		0x20003000
-.equ	SYSTIMER_CS,		0x00
-.equ	SYSTIMER_CLO,		0x04
-.equ	SYSTIMER_CHI,		0X08
-.equ	SYSTIMER_C0,		0X0C
-.equ	SYSTIMER_C1,		0X10
-.equ	SYSTIMER_C2,		0X14
-.equ	SYSTIMER_C3,		0X18
+.equ    SYSTIMER_BASE,      0x20003000
+.equ    SYSTIMER_CS,        0x00
+.equ    SYSTIMER_CLO,       0x04
+.equ    SYSTIMER_CHI,       0X08
+.equ    SYSTIMER_C0,        0X0C
+.equ    SYSTIMER_C1,        0X10
+.equ    SYSTIMER_C2,        0X14
+.equ    SYSTIMER_C3,        0X18
 
 
 
@@ -52,20 +52,20 @@
 @@ Simple timer sleep in micro seconds
 @@@@
 st_sleep:
-	ldr		r2, =SYSTIMER_BASE
-	ldr		r1, [r2, #SYSTIMER_CLO]
-	add		r0, r1						@ Get the timer offset to end
-	
+    ldr     r2, =SYSTIMER_BASE
+    ldr     r1, [r2, #SYSTIMER_CLO]
+    add     r0, r1                      @ Get the timer offset to end
+    
 st_sleep_loop:
-	ldr		r1, [r2, #SYSTIMER_CLO]
-	cmp		r0, r1
-	bgt		st_sleep_loop				@ While the wanted time is still
-										@ Greater than the current time.
-	
-	bx		lr							@ Otherwise return
+    ldr     r1, [r2, #SYSTIMER_CLO]
+    cmp     r0, r1
+    bgt     st_sleep_loop               @ While the wanted time is still
+                                        @ Greater than the current time.
+    
+    bx      lr                          @ Otherwise return
 @@ END ST_SLEEP
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-	
+    
 
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -73,13 +73,13 @@ st_sleep_loop:
 @ Sets up a timer for one second from now in C1
 @@@@
 initSecondTimer:
-    ldr		r2, =SYSTIMER_BASE
-	mov     r0, #0x2                    @ We want the C1 bit in CS
+    ldr     r2, =SYSTIMER_BASE
+    mov     r0, #0x2                    @ We want the C1 bit in CS
     str     r0, [r2, #SYSTIMER_CS]      @ Clear the match on C1
     
-	ldr		r1, [r2, #SYSTIMER_CLO]
+    ldr     r1, [r2, #SYSTIMER_CLO]
     ldr     r0, =1000000                @ 1000000us = 1s
-	add		r1, r0
+    add     r1, r0
     str     r1, [r2, #SYSTIMER_C1]
 
     bx      lr
@@ -94,8 +94,8 @@ timerFired:
     
     bl      initSecondTimer             @ Reset the timer so it will fire again 
 
-    ldr		r1, =SYSTIMER_BASE
-	mov     r0, #0x2                    @ We want the C1 bit in CS
+    ldr     r1, =SYSTIMER_BASE
+    mov     r0, #0x2                    @ We want the C1 bit in CS
     str     r0, [r1, #SYSTIMER_CS]      @ Clear the match on C1
 
     ldr     r0, =paused
@@ -222,8 +222,8 @@ pauseTimer:
     mov     r0, #1
     str     r0, [r1]
     
-    ldr		r2, =SYSTIMER_BASE
-    ldr		r1, [r2, #SYSTIMER_CLO]
+    ldr     r2, =SYSTIMER_BASE
+    ldr     r1, [r2, #SYSTIMER_CLO]
     ldr     r2, [r2, #SYSTIMER_C1]
     sub     r2, r1                      @ Get the number of microseconds we had
                                         @ Left to the next second
@@ -245,8 +245,8 @@ unpauseTimer:
     ldr     r0, =pause_timeleft
     ldr     r0, [r0]
 
-    ldr		r2, =SYSTIMER_BASE
-    ldr		r1, [r2, #SYSTIMER_CLO]     @ Get the current time
+    ldr     r2, =SYSTIMER_BASE
+    ldr     r1, [r2, #SYSTIMER_CLO]     @ Get the current time
     add     r0, r1                      @ Add the time we had remaining to it
     str     r0, [r2, #SYSTIMER_C1]      @ And set it in the compare register 1
     
