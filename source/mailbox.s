@@ -31,69 +31,17 @@
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @ framebuffer_init
-@ Initializes the framebuffer by asking the gpio
-@ for the framebuffer described in framebuffer_struct.s
-@ through the mailbox interface.
+@ Initializes the framebuffer
 @@@@
 framebuffer_init:
     push    { lr }  
-    ldr     r1, =MAILBOX_BASE
-    add     r1, #MAILBOX_STATUS
     
-fbinit_waitmb:
-    ldr     r0, [r1]
-    tst     r0, #0x80000000                     @ Wait till bit 31 (Full) is clear
-    bne     fbinit_waitmb
+    bl      frameBufferPointer              @ Get Pi linux framebuffer
     
-    @@
-    @ Mailbox wants the framebuffer struct + 0x40000000 orred with 
-    @ the frame buffer channel
-    ldr     r3, =framebuffer_info
-    add     r3, #0x40000000
-    orr     r3, #MAILBOX_CHANNEL_FRAMEBUFFER
+    ldr     r1, =framebuffer_info
+    str     r0, [r1, #FB_POINTER]
     
-    ldr     r1, =MAILBOX_BASE
-    add     r1, #MAILBOX_WRITE      
-    str     r3, [r1]                            @ Write this to the write mailbox
-    
-
-    @@
-    @ Wait for response
-fbinit_waitresp:
-    ldr     r1, =MAILBOX_BASE
-    add     r1, #MAILBOX_STATUS
-    ldr     r0, [r1]
-    tst     r0, #0x40000000                     @ Wait till bit 30 (Empty) is clear
-    bne     fbinit_waitresp
-    
-    @@ 
-    @ Check response
-    ldr     r1, =MAILBOX_BASE
-    add     r1, #MAILBOX_READ
-    
-    ldr     r0, [r1]
-    and     r0, #0xF
-    cmp     r0, #MAILBOX_CHANNEL_FRAMEBUFFER
-    bne     fbinit_waitresp
-    
-    @@
-    @ Check if init succeded 
-    ldr     r0, [r1]
-    lsr     r0, #4                              @ Bitmask off the upper 28 bits
-    lsls    r0, #4                              @ Check if we got a 0 value
-    movne   r0, #0                              @ If we didn't return 0 to indicate
-    popne   { pc }                              @ an error.
-    
-    
-    ldr     r0, =framebuffer_info
-    add     r0, #FB_POINTER
-fbinit_waitptr:
-    ldr     r1, [r0]
-    cmp     r1, #0
-    beq     fbinit_waitptr
-    
-    
-    mov     r0, #1                              @ We got a non 0 pointer so we succeded
+    mov     r0, #1                          @ We got a non 0 pointer so we succeded
     pop     { pc }
 @@ END FRAMEBUFFER_INIT
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@

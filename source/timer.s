@@ -47,22 +47,33 @@
 
 .section .text
 
+
+
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @@ st_sleep(int)
 @@ Simple timer sleep in micro seconds
 @@@@
 st_sleep:
-    ldr     r2, =SYSTIMER_BASE
-    ldr     r1, [r2, #SYSTIMER_CLO]
-    add     r0, r1                      @ Get the timer offset to end
-    
-st_sleep_loop:
-    ldr     r1, [r2, #SYSTIMER_CLO]
-    cmp     r0, r1
-    bgt     st_sleep_loop               @ While the wanted time is still
+@ We don't have access to SYSTIMER in the Pi3
+@ Roughly approximate in MS
+st_sleep_l0:
+    mov     r1, #0x600                  @ Based off 0x55555555 =~ 1s, 0x600 =~ 1ms
+st_sleep_l1:
+    subs    r1, #1
+    bne     st_sleep_l1
+    subs    r0, #1
+    bne     st_sleep_l0
+    bx      lr
+@    ldr     r2, =SYSTIMER_BASE
+@    ldr     r1, [r2, #SYSTIMER_CLO]
+@    add     r0, r1                      @ Get the timer offset to end
+@    
+@st_sleep_loop:
+@    ldr     r1, [r2, #SYSTIMER_CLO]
+@    cmp     r0, r1
+@    bgt     st_sleep_loop               @ While the wanted time is still
                                         @ Greater than the current time.
-    
-    bx      lr                          @ Otherwise return
+@    bx      lr                          @ Otherwise return
 @@ END ST_SLEEP
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     

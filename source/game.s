@@ -85,9 +85,9 @@ initGame:
     mov     r1, #0                      @ Make sure cheating isn't still enabled
     str     r1, [r0]
     
-    bl      resetTimer                  @ Make sure the timer is back at 0
-    bl      showTimer                   @ Show the time elapsed counter in the top left
-    bl      unpauseTimer                @ Make sure it isn't paused
+    @bl      resetTimer                  @ Make sure the timer is back at 0
+    @bl      showTimer                   @ Show the time elapsed counter in the top left
+    @bl      unpauseTimer                @ Make sure it isn't paused
     
     pop     { pc }
 @@ END INITGAME
@@ -127,6 +127,9 @@ checkState:
     
     cmp     r1, #STATE_GAME_QUIT        @ Inescapeable quit state
 state_gamequit:
+    mov     r0, #0
+    mov     r7, #1
+    swi     0
     beq     state_gamequit
     
     @@ Should not get here, unknown state
@@ -167,7 +170,7 @@ state_mainmenu_start:
     pop     { r4, pc }
 
 state_pausemenu:
-    bl      pauseTimer                  @ Pause the timer while we're in the pause menu
+    @bl      pauseTimer                  @ Pause the timer while we're in the pause menu
 
     bl      gameMenu                    @ Run the menu code
 
@@ -176,7 +179,7 @@ state_pausemenu:
     cmp     r0, #GAMEMENU_QUITGAME
     beq     state_pausemenu_quit
     
-    bl      unpauseTimer                @ Menu was closed so resume timing
+    @bl      unpauseTimer                @ Menu was closed so resume timing
 
     mov     r0, #STATE_IN_GAME          @ Update our state since the menu was 
     str     r0, [r4, #STATE]            @ closed
@@ -195,7 +198,7 @@ state_pausemenu_quit:
     bl      fadeToBlack                 @ Fade to black
     bl      clearScr                    @ Clear the screen 
 
-    bl      hideTimer                   @ Stop displaying the timer and remove it
+    @bl      hideTimer                   @ Stop displaying the timer and remove it
 
     mov     r0, #STATE_MAIN_MENU        @ Update our state
     str     r0, [r4, #STATE]
@@ -204,7 +207,7 @@ state_pausemenu_quit:
     
 
 state_game_won:
-    bl      pauseTimer                  @ Pause the timer so they can see their time
+    @bl      pauseTimer                  @ Pause the timer so they can see their time
 
     ldr     r0, =maze_gamewon_width
     ldr     r0, [r0]
@@ -233,7 +236,7 @@ state_game_won:
     str     r3, [r0, #LEVEL]            @ Store the new level
     
 
-    bl      hideTimer                   @ Now we can hide the timer    
+    @bl      hideTimer                   @ Now we can hide the timer    
 
     mov     r0, #STATE_MAIN_MENU        @ Update our state
     str     r0, [r4, #STATE]
@@ -246,7 +249,7 @@ state_game_won:
     pop     { r4, pc }
 state_game_lost: 
 
-    bl      pauseTimer                  @ Pause the timer so they can see their time
+    @bl      pauseTimer                  @ Pause the timer so they can see their time
 
     ldr     r0, =maze_gameover_width
     ldr     r0, [r0]
@@ -264,7 +267,7 @@ state_game_lost:
     
     bl      waitForButton               @ Then wait for the user to press any button
     
-    bl      hideTimer                   @ Hide the timer from view 
+    @bl      hideTimer                   @ Hide the timer from view 
 
     mov     r0, #STATE_MAIN_MENU        @ Update our state
     str     r0, [r4, #STATE]

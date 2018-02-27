@@ -5,8 +5,9 @@
 
 @@@@@@@@@@@@@@
 @ Size of our screen
-.equ    WIDTH,          1024
-.equ    HEIGHT,         768
+.equ    WIDTH,          1280    
+.equ    HEIGHT,         1024
+.equ    BPP,            4
 
 @@@@@@@@@@@@@@
 @@ Bitmasks for the various buttons

@@ -16,7 +16,7 @@ framebuffer_info:
     .int    1024                @ Virt. Width       0x08
     .int    768                 @ Virt. Height      0x0C
     .int    0                   @ Pitch (GPU set)   0x10
-    .int    16                  @ BPP               0x14
+    .int    32                  @ BPP               0x14
     .int    0                   @ Offset X          0x18
     .int    0                   @ Offset Y          0x1C
     .int    0                   @ Pointer (GPU set) 0x20

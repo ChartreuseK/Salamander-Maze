@@ -7,7 +7,7 @@
 .globl game
 
 
-.section .text
+.section .data
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @ Include our global .equ's
 .include "defines.s"

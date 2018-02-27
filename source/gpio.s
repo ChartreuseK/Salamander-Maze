@@ -4,6 +4,7 @@
 @ Interfacing methods for the Rasperry Pi's GPIO pins
 @@@@
 
+.globl gpio_init
 .globl gpio_read
 .globl gpio_write
 .globl gpio_mode
@@ -12,8 +13,11 @@
 
 .equ FUNC_SELECT_REG_BASE,      0x20200000
 .equ SET_REG_BASE,              0x2020001C
+.equ SET_REG_OFF,               0x1C
 .equ CLEAR_REG_BASE,            0x20200028
+.equ CLEAR_REG_OFF,             0x28
 .equ LEVEL_REG_BASE,            0x20200034
+.equ LEVEL_REG_OFF,             0x34
 
 .equ    GPIO_INPUT,     0
 .equ    GPIO_OUTPUT,    1
@@ -24,14 +28,27 @@
 .equ    GPIO_ALT_4,     3
 .equ    GPIO_ALT_5,     2
 
+@@@@@@@@2
+@ gpio_init
+@  Get's the GPIO base register initialized
+@@@@@
+gpio_init:
+    push    { lr }
+    bl		getGpioPtr
+    ldr     r1, =gpio_base
+	str     r0, [r1]
+    pop     { pc }	
+
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @ gpio_mode(pin, mode)
 @  Sets the specified pin to the specified mode 
 @  0 input 1 output 4 alt0 5 alt1 6 alt2 7 alt3 3 alt4 2 alt5
 @@@@
 gpio_mode:
-    push    { r4 }
-    ldr     r2, =FUNC_SELECT_REG_BASE   @ Base address of the function select registers
+    push    { r4 }    
+    @ldr     r2, =FUNC_SELECT_REG_BASE   @ Base address of the function select registers
+    ldr     r2, =gpio_base
+    ldr     r2, [r2]                    @ Base address
     
 countl:
     cmp     a1, #10                     @ While the pin is greater than 10
@@ -65,8 +82,11 @@ countl:
 @@@@
 gpio_write:
     cmp     a2, #1
-    ldreq   r2, =SET_REG_BASE           @ Set if val is 1
-    ldrne   r2, =CLEAR_REG_BASE         @ Clear if val is 0
+    
+    ldr     r2, =gpio_base
+    ldr     r2, [r2]                    @ Base address
+    addeq   r2, #SET_REG_OFF            @ Set if val is 1
+    addne   r2, #CLEAR_REG_OFF          @ Clear if val is 0
 
     cmp     a1, #31
     subgt   a1, #32
@@ -88,7 +108,11 @@ gpio_write:
 @ Where var is 0 or 1
 @@@@
 gpio_read:
-    ldr     r2, =LEVEL_REG_BASE         @ level register 0 if pin <= 31
+    @ldr     r2, =LEVEL_REG_BASE         @ level register 0 if pin <= 31
+    ldr     r2, =gpio_base
+    ldr     r2, [r2]                    @ Base address
+    add     r2, #LEVEL_REG_OFF
+    
     cmp     a1, #31
     addgt   r2, #4                      @ level register 1 if pin > 31
     
@@ -110,6 +134,9 @@ gpio_read:
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@ DATA SECTION @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 .section .data
+
+gpio_base:
+    .int    0       
 
 
 @ Page 92

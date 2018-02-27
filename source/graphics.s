@@ -36,8 +36,38 @@
 
 
 
+.equ    SCREEN_BYTES, (WIDTH*HEIGHT*BPP)
+.equ    SCREEN_WORDS, (WIDTH*HEIGHT)
+.equ    WORDS_NEXTPOW,  0x200000        @ Next power of 2 > SCREEN_WORDS
 
 
+
+@@@@@@@@@@@@@
+@ Convert a 16 bit color to 32-bit
+@ Not a true function, arg and return in r4 for speed
+@ Just so we can retrofit
+@ all regs preserved
+conv16_32:
+    push    { r5, r6 }
+    @ We have RRRR RGGG GGGB BBBB
+    @ We want RRRR RRRR GGGG GGGG BBBB BBBB
+    @ Red
+    and     r6, r4, #0xF800
+    mov     r6, r6, LSR #8              @ Move down to 0..7
+    orr     r6, r6, LSR #5             @ Move top 3 bits into low 3
+    @ Green
+    and     r5, r4, #0x07E0             @ Extract green
+    mov     r5, r5, LSR #3              @ Move down to 0..7
+    orr     r5, r5, LSR #6              @ Move top 2 bits into low 2
+    @ Blue 
+    and     r4, r4, #0x001F             @ Extract blue
+    mov     r4, r4, LSL #3              @ Move up to 8 bits
+    orr     r4, r4, LSR #5              @ Move top 3 bits into low 3
+    
+    orr     r4, r5, LSL #8              @ Add green to blue
+    orr     r4, r6, LSL #16             @ Add red
+    pop     { r5, r6 }
+    bx      lr
 
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -50,20 +80,20 @@ fadeToBlack:
     ldr     r1, [r1, #FB_POINTER]       @ Address of the frame buffer
     
     ldr     r3, =0xC218A6F9             @ Random seed for the effect
-    mov     r2, #0x180000               @ Number of pixels to draw, 2 * 1024 * 768
+    mov     r2, #SCREEN_BYTES           @ Number of pixels to draw
     mov     r0, #BLACK                  @ Color black
 ftb_loop:
     subs    r2, #1
     popeq   { r4, r5, pc }
     
-    mov     r4, #0x100000               @ Slightly bigger than the screen size of C0000
+    mov     r4, #WORDS_NEXTPOW          @ Slightly bigger than the screen size of C0000
     sub     r4, #1                      
     and     r4, r3, r4                  @ We only want the lower bits
     
-    cmp     r4, #0xC0000                @ Check against the size of the FB
-    bgt     ftb_afterPixel
+    cmp     r4, #SCREEN_WORDS           @ Check against the size of the FB
+    bge     ftb_afterPixel
     
-    lsl     r4, #1                      @ Since we're using 2 bytes per pixel
+    lsl     r4, #2                      @ Since we're using 4 bytes per pixel
     str     r0, [r1, r4]        
 ftb_afterPixel:
     @ Use a Linear congruential generator to generate some
@@ -86,7 +116,7 @@ ftb_afterPixel:
 
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@ putPixel16(int, int, short)
+@ putPixel16(int, int, int)
 @  Draws a pixel at (r0, r1) with colour r2
 @  Assuming a 1024x768 screen
 @  offset = x + y << 10
@@ -96,10 +126,15 @@ putPixel16:
     ldr     r3, =framebuffer_info       @ Get our framebuffer address
     ldr     r3, [r3, #FB_POINTER]       @ Address of the frame buffer
     
-    add     r0, r1, lsl #10             @ r0 = x + y << 10 
-                                        @ r0 = x + (y * 1024)
-    lsl     r0, #1                      @ Half words
-    strh    r2, [r3, r0]                @ Set the pixel to the colour
+    @add     r0, r1, lsl #10             @ r0 = x + y << 10 
+    @                                    @ r0 = x + (y * 1024)
+    push    {r2}
+    mov     r2, #WIDTH
+    mla     r0, r1, r2, r0              @ r0 = x + (y * WIDTH)
+    pop     {r2}
+    
+    lsl     r0, #2                      @ words
+    str     r2, [r3, r0]                @ Set the pixel to the colour
     bx      lr
 @@ END PUTPIXEL16
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -127,7 +162,7 @@ clearScr:
     ldr     r3, [r3, #FB_POINTER]       @ Address of the frame buffer
     mov     r0, #BLACK
     mov     r1, #BLACK
-    add     r2, r3, #0x180000           @ 1024x768x2
+    add     r2, r3, #SCREEN_BYTES       @ 
 clrloop:
     strd    r0, [r3], #8                @ Store 8 bytes at a time
     cmp     r2, r3
@@ -155,24 +190,26 @@ clrloop:
 fillBox:
     push    { r4, r5, lr }              @ We pushed 3x4 bytes onto the stack
     
-    add     r4, r0, r1, lsl #10         @ r4 = x + (y * 1024)
+    @add     r4, r0, r1, lsl #10         @ r4 = x + (y * 1024)
+    mov     r4, #WIDTH
+    mla     r4, r1, r4, r0              @ r4 = x + (y * WIDTH)
     
     ldr     r0, =framebuffer_info       
     ldr     r0, [r0, #FB_POINTER]       @ Get the Frame buffer address
-    add     r0, r4, lsl #1              @ Move us to the start x,y
+    add     r0, r4, lsl #2              @ Move us to the start x,y
     
     ldr     r4, [sp, #12]               @ We want the 5th argument, but we have
                                         @ To add the offset that we pushed
                                         
     mov     r1, r2                      @ Save a copy of the width
 fillBox_loop:
-    strh    r4, [r0], #2
+    str     r4, [r0], #4
     
     subs    r1, #1
     bne     fillBox_loop
     
-    sub     r0, r2, lsl #1              @ Subtract the width we wrote * 2 
-    add     r0, #2048                   @ 1024*2 One line
+    sub     r0, r2, lsl #2              @ Subtract the width we wrote * BPP
+    add     r0, #WIDTH*BPP              @ One line
 
     
     mov     r1, r2
@@ -258,17 +295,21 @@ outlineBox:
 
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@ horizLine(int x, int y, int width, short colour)
+@ horizLine(int x, int y, int width, int colour)
 horizLine:
     @ Calculate the offset in the FB
-    add     r0, r0, r1, lsl #10         @ r4 = x + (y * 1024)
+    @add     r0, r0, r1, lsl #10         @ r4 = x + (y * 1024)
+    push    {r2}
+    mov     r2, #WIDTH
+    mla     r0, r1, r2, r0              @ r0 = x + (y * WIDTH)
+    pop     {r2}
     
     ldr     r1, =framebuffer_info       @ Get our framebuffer address
     ldr     r1, [r1, #FB_POINTER]       @ Address of the frame buffer
-    add     r1, r0, lsl #1              @ Half words so we need to mul by 2
+    add     r1, r0, lsl #2              @ words so we need to mul by 4
     
 horizLine_loop:
-    strh    r3, [r1], #2                @ Draw each pixel
+    str     r3, [r1], #4                @ Draw each pixel
     
     subs    r2, #1
     bne     horizLine_loop              @ While we still have some width to go
@@ -293,18 +334,22 @@ horizLine_loop:
 
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@ vertLine(int x, int y, int height, short colour)
+@ vertLine(int x, int y, int height, int colour)
 vertLine:
     @ Calculate the offset in the FB
-    add     r0, r0, r1, lsl #10         @ r4 = x + (y * 1024)
+    @add     r0, r0, r1, lsl #10         @ r4 = x + (y * 1024)
+    push    {r2}
+    mov     r2, #WIDTH
+    mla     r0, r1, r2, r0              @ r0 = x + (y * WIDTH)
+    pop     {r2}
     
     ldr     r1, =framebuffer_info       @ Get our framebuffer address
     ldr     r1, [r1, #FB_POINTER]       @ Address of the frame buffer
-    add     r1, r0, lsl #1              @ Half words so we need to mul by 2
+    add     r1, r0, lsl #2              @ words so we need to mul by 4
     
 vertLine_loop:
-    strh    r3, [r1]                    @ Draw each pixel, and advance a line\
-    add     r1, #2048                   @ 1024*2 One line
+    str     r3, [r1]                    @ Draw each pixel, and advance a line\
+    add     r1, #WIDTH*BPP              @ One line
     
     
     subs    r2, #1
@@ -340,8 +385,11 @@ putTile_bw_8x8:
     ldr     r3, [r3, #FB_POINTER]       @ Address of the frame buffer
     
     @ Calculate the offset in the FB
-    add     r4, r0, r1, lsl #10         @ r4 = x + (y * 1024)
-    add     r3, r4, lsl #1              @ Half words so we need to mul by 2
+    @add     r4, r0, r1, lsl #10         @ r4 = x + (y * 1024)
+    mov     r4, #WIDTH
+    mla     r4, r1, r4, r0              @ r4 = x + (y * WIDTH)
+
+    add     r3, r4, lsl #2              @ Words so we need to mul by 4
     
     mov     r5, #WHITE                  @ White (All ones in the 16 bits)
     mov     r6, #8                      @ 8 rows to draw
@@ -353,40 +401,40 @@ ptbw88_loop:
     ldrb    r4, [r2], #1                @ Load the row byte from the tile
     
     tst     r4, #0x80                   @ Now we bitmask each bit from the tile
-    strneh  r5, [r3], #2                @ And either write the next word
-    addeq   r3, #2                      @ Or skip if the bit isn't set.
+    strne   r5, [r3], #BPP              @ And either write the next word
+    addeq   r3, #BPP                    @ Or skip if the bit isn't set.
     
     tst     r4, #0x40
-    strneh  r5, [r3], #2
-    addeq   r3, #2
+    strne   r5, [r3], #BPP
+    addeq   r3, #BPP
     
     tst     r4, #0x20
-    strneh  r5, [r3], #2
-    addeq   r3, #2
+    strne   r5, [r3], #BPP
+    addeq   r3, #BPP
     
     tst     r4, #0x10
-    strneh  r5, [r3], #2
-    addeq   r3, #2
+    strne   r5, [r3], #BPP
+    addeq   r3, #BPP
     
     tst     r4, #0x8
-    strneh  r5, [r3], #2
-    addeq   r3, #2
+    strne   r5, [r3], #BPP
+    addeq   r3, #BPP
     
     tst     r4, #0x4
-    strneh  r5, [r3], #2
-    addeq   r3, #2
+    strne   r5, [r3], #BPP
+    addeq   r3, #BPP
     
     tst     r4, #0x2
-    strneh  r5, [r3], #2
-    addeq   r3, #2
+    strne   r5, [r3], #BPP
+    addeq   r3, #BPP
     
     tst     r4, #0x1
-    strneh  r5, [r3], #2
-    addeq   r3, #2
+    strne   r5, [r3], #BPP
+    addeq   r3, #BPP
     
     @ Return to the start of the next line
-    sub     r3, #16                     @ Subtract the 8*2 pixels we wrote
-    add     r3, #2048                   @ 1024*2 One line
+    sub     r3, #8*BPP                  @ Subtract the 8*BPP pixels we wrote
+    add     r3, #WIDTH*BPP              @ One line
     
     b       ptbw88_loop
 ptbw88_end:
@@ -422,8 +470,12 @@ putTile_bw_8x8_double:
     ldr     r3, [r3, #FB_POINTER]       @ Address of the frame buffer
     
     @ Calculate the offset in the FB
-    add     r4, r0, r1, lsl #10         @ r4 = x + (y * 1024)
-    add     r3, r4, lsl #1              @ Half words so we need to mul by 2
+    @add     r4, r0, r1, lsl #10         @ r4 = x + (y * 1024)
+
+    mov     r4, #WIDTH
+    mla     r4, r1, r4, r0              @ r4 = x + (y * WIDTH)
+
+    add     r3, r4, lsl #2              @ Words so we need to mul by 4
     
     mov     r5, #WHITE                  @ White (All ones in the 32 bits)
     mov     r6, #8                      @ 8 rows to draw
@@ -437,32 +489,40 @@ ptbw88d_loop:
 
     tst     r4, #0x80                   @ Now we bitmask each bit from the tile
     strne   r5, [r3], #4                @ And either write the next word
-    addeq   r3, #4                      @ Or skip if the bit isn't set.
+    strne   r5, [r3], #4                @ And either write the next word
+    addeq   r3, #8                      @ Or skip if the bit isn't set.
     tst     r4, #0x40
-    strne   r5, [r3], #4             
-    addeq   r3, #4
+    strne   r5, [r3], #4
+    strne   r5, [r3], #4
+    addeq   r3, #8
     tst     r4, #0x20
+    strne   r5, [r3], #4
     strne   r5, [r3], #4           
-    addeq   r3, #4
+    addeq   r3, #8
     tst     r4, #0x10
+    strne   r5, [r3], #4
     strne   r5, [r3], #4    
-    addeq   r3, #4
+    addeq   r3, #8
     tst     r4, #0x8
+    strne   r5, [r3], #4
     strne   r5, [r3], #4               
-    addeq   r3, #4
+    addeq   r3, #8
     tst     r4, #0x4
+    strne   r5, [r3], #4
     strne   r5, [r3], #4              
-    addeq   r3, #4
+    addeq   r3, #8
     tst     r4, #0x2
+    strne   r5, [r3], #4
     strne   r5, [r3], #4                
-    addeq   r3, #4
+    addeq   r3, #8
     tst     r4, #0x1
+    strne   r5, [r3], #4
     strne   r5, [r3], #4              
-    addeq   r3, #4
+    addeq   r3, #8
     
     @ Return to the start of the next line
-    sub     r3, #32                     @ Subtract the 16*2 pixels we wrote
-    add     r3, #2048                   @ 1024*2 One line
+    sub     r3, #16*BPP                 @ Subtract the 16*2 pixels we wrote
+    add     r3, #WIDTH*BPP              @ One line
 
 .endr
 
@@ -508,8 +568,11 @@ putTile_16x16:
     ldr     r3, [r3, #FB_POINTER]       @ Address of the frame buffer
     
     @ Calculate the offset in the FB
-    add     r4, r0, r1, lsl #10         @ r4 = x + (y * 1024)
-    add     r3, r4, lsl #1              @ Half words so we need to mul by 2
+    @add     r4, r0, r1, lsl #10         @ r4 = x + (y * 1024)
+    mov     r4, #WIDTH
+    mla     r4, r1, r4, r0              @ r0 = x + (y * WIDTH)
+
+    add     r3, r4, lsl #2              @ words so we need to mul by 4
     
     mov     r6, #16                     @ 16 rows to blit
 
@@ -517,14 +580,15 @@ pt1616_loop:
 
     @ Blit one row of tile data
 
-.rept 4
-    ldrd    r4, [r2], #8                @ Load 4 half-words of tile data
-    strd    r4, [r3], #8                @ Blit 4 half-words of tile data
+.rept 16
+    ldrh    r4, [r2], #2                @ Load 1 word of tile data
+    bl      conv16_32   @ Convert r4 (not a compliant func)
+    str     r4, [r3], #4
 .endr 
 
     @ Return to the start of the next line
-    sub     r3, #32                     @ Subtract the 16*2 pixels we wrote
-    add     r3, #2048                   @ 1024*2 One line
+    sub     r3, #16*BPP                 @ Subtract the 16*2 pixels we wrote
+    add     r3, #WIDTH*BPP              @ 1024*2 One line
     
     subs    r6, #1 
     bne     pt1616_loop
@@ -557,8 +621,12 @@ putTile_16x16_double:
     ldr     r3, [r3, #FB_POINTER]       @ Address of the frame buffer
     
     @ Calculate the offset in the FB
-    add     r4, r0, r1, lsl #10         @ r4 = x + (y * 1024)
-    add     r3, r4, lsl #1              @ Half words so we need to mul by 2
+    @add     r4, r0, r1, lsl #10         @ r4 = x + (y * 1024)
+    
+    mov     r4, #WIDTH
+    mla     r4, r1, r4, r0              @ r0 = x + (y * WIDTH)
+
+    add     r3, r4, lsl #2              @ Words so we need to mul by 4
     
     mov     r6, #16                     @ 16 rows to blit
 
@@ -567,46 +635,29 @@ pt1616d_loop:
     
     @ Blit two rows of tile data
 
-    .rept 4
-    ldrh    r4, [r2], #2
-    strh    r4, [r3], #2
-    strh    r4, [r3], #2
-    ldrh    r4, [r2], #2
-    strh    r4, [r3], #2
-    strh    r4, [r3], #2
-    ldrh    r4, [r2], #2
-    strh    r4, [r3], #2
-    strh    r4, [r3], #2
-    ldrh    r4, [r2], #2
-    strh    r4, [r3], #2
-    strh    r4, [r3], #2
-    
+    .rept 16
+    ldrh    r4, [r2], #2                @ Load 1 word of tile data
+    bl      conv16_32   @ Convert r4 (not a compliant func)
+    str     r4, [r3], #4
+    str     r4, [r3], #4
     .endr
     
     @ Return to the start of the next line
-    sub     r3, #64                     @ Subtract the 32*2 pixels we wrote
-    add     r3, #2048                   @ 1024*2 One line
+    sub     r3, #32*BPP                 @ Subtract the 32*2 pixels we wrote
+    add     r3, #WIDTH*BPP              @ 1024*2 One line
     sub     r2, #32                     @ Go back in the image to read
                                         @ the same line again
 
-    .rept 4
-    ldrh    r4, [r2], #2
-    strh    r4, [r3], #2
-    strh    r4, [r3], #2
-    ldrh    r4, [r2], #2
-    strh    r4, [r3], #2
-    strh    r4, [r3], #2
-    ldrh    r4, [r2], #2
-    strh    r4, [r3], #2
-    strh    r4, [r3], #2
-    ldrh    r4, [r2], #2
-    strh    r4, [r3], #2
-    strh    r4, [r3], #2
+    .rept 16
+    ldrh    r4, [r2], #2                @ Load 1 word of tile data
+    bl      conv16_32   @ Convert r4 (not a compliant func)
+    str     r4, [r3], #4
+    str     r4, [r3], #4
     .endr
     
     @ Return to the start of the next line
-    sub     r3, #64                     @ Subtract the 16*2 pixels we wrote
-    add     r3, #2048                   @ 1024*2 One line
+    sub     r3, #32*BPP                 @ Subtract the 16*2 pixels we wrote
+    add     r3, #WIDTH*BPP              @ 1024*2 One line
 
     subs    r6, #1                      @ Count down the rows
     
@@ -642,8 +693,11 @@ putTile_16x16_alpha:
     ldr     r3, [r3, #FB_POINTER]       @ Address of the frame buffer
     
     @ Calculate the offset in the FB
-    add     r4, r0, r1, lsl #10         @ r4 = x + (y * 1024)
-    add     r3, r4, lsl #1              @ Half words so we need to mul by 2
+    @add     r4, r0, r1, lsl #10         @ r4 = x + (y * 1024)
+    mov     r4, #WIDTH
+    mla     r4, r1, r4, r0              @ r0 = x + (y * WIDTH)
+    
+    add     r3, r4, lsl #2              @ Words so we need to mul by 4
     
     mov     r6, #16                     @ 16 rows to blit
 
@@ -653,15 +707,16 @@ pt1616a_loop:
     @ Blit one rows of tile data
 
     .rept 16
-    ldrh    r4, [r2], #2
+    ldrh    r4, [r2], #2                @ Load 1 word of tile data
     cmp     r4, #0
-    strneh  r4, [r3], #2
-    addeq   r3, #2
+    blne    conv16_32   @ Convert r4 (not a compliant func)
+    strne   r4, [r3], #4
+    addeq   r3, #4
     .endr
-    
+        
     @ Return to the start of the next line
-    sub     r3, #32                     @ Subtract the 16*2 pixels we wrote
-    add     r3, #2048                   @ 1024*2 One line
+    sub     r3, #16*BPP                 @ Subtract the 16*2 pixels we wrote
+    add     r3, #WIDTH*BPP              @ 1024*2 One line
     
     subs    r6, #1                      @ Count down the rows
     bne     pt1616a_loop
@@ -707,8 +762,12 @@ putTile_16x16_double_alpha:
     ldr     r3, [r3, #FB_POINTER]       @ Address of the frame buffer
     
     @ Calculate the offset in the FB
-    add     r4, r0, r1, lsl #10         @ r4 = x + (y * 1024)
-    add     r3, r4, lsl #1              @ Half words so we need to mul by 2
+    @add     r4, r0, r1, lsl #10         @ r4 = x + (y * 1024)
+    
+    mov     r4, #WIDTH
+    mla     r4, r1, r4, r0              @ r4 = x + (y * WIDTH)
+
+    add     r3, r4, lsl #2              @ words so we need to mul by 4
     
     mov     r6, #16                     @ 16 rows to blit
 
@@ -718,30 +777,32 @@ pt1616da_loop:
     @ Blit two rows of tile data
 
     .rept 16
-    ldrh    r4, [r2], #2
+    ldrh    r4, [r2], #2                @ Load 1 word of tile data
     cmp     r4, #0
-    strneh  r4, [r3], #2
-    strneh  r4, [r3], #2
-    addeq   r3, #4
+    blne    conv16_32   @ Convert r4 (not a compliant func)
+    strne   r4, [r3], #4
+    strne   r4, [r3], #4
+    addeq   r3, #8
     .endr
     
     @ Return to the start of the next line
-    sub     r3, #64                     @ Subtract the 32*2 pixels we wrote
-    add     r3, #2048                   @ 1024*2 One line
+    sub     r3, #32*BPP                 @ Subtract the 32*2 pixels we wrote
+    add     r3, #WIDTH*BPP              @ 1024*2 One line
     sub     r2, #32                     @ Go back in the image to read
                                         @ the same line again
 
     .rept 16
-    ldrh    r4, [r2], #2
+    ldrh    r4, [r2], #2                @ Load 1 word of tile data
     cmp     r4, #0
-    strneh  r4, [r3], #2
-    strneh  r4, [r3], #2
-    addeq   r3, #4
+    blne    conv16_32   @ Convert r4 (not a compliant func)
+    strne   r4, [r3], #4
+    strne   r4, [r3], #4
+    addeq   r3, #8
     .endr
     
     @ Return to the start of the next line
-    sub     r3, #64                     @ Subtract the 16*2 pixels we wrote
-    add     r3, #2048                   @ 1024*2 One line
+    sub     r3, #32*BPP                 @ Subtract the 16*2 pixels we wrote
+    add     r3, #WIDTH*BPP              @ 1024*2 One line
     
     subs    r6, #1                      @ Count down the rows
     bne     pt1616da_loop
@@ -783,8 +844,11 @@ putTile_32x32:
     ldr     r3, [r3, #FB_POINTER]       @ Address of the frame buffer
     
     @ Calculate the offset in the FB
-    add     r4, r0, r1, lsl #10         @ r4 = x + (y * 1024)
-    add     r3, r4, lsl #1              @ Half words so we need to mul by 2
+    @add     r4, r0, r1, lsl #10         @ r4 = x + (y * 1024)
+    mov     r4, #WIDTH
+    mla     r4, r1, r4, r0              @ r4 = x + (y * WIDTH)
+    
+    add     r3, r4, lsl #2              @ Words so we need to mul by 2
     
     mov     r6, #32                     @ 16 rows to blit
 
@@ -794,14 +858,15 @@ pt3232_loop:
     
     @ Blit one row of tile data
     
-.rept 8
-    ldrd    r4, [r2], #8                @ Load 4 half-words of tile data
-    strd    r4, [r3], #8                @ Blit 4 half-words of tile data
+.rept 32
+    ldrh    r4, [r2], #2                @ Load 1 word of tile data
+    bl      conv16_32   @ Convert r4 (not a compliant func)
+    str     r4, [r3], #4
 .endr
     
     @ Return to the start of the next line
-    sub     r3, #64                     @ Subtract the 32 pixels * 2 we wrote
-    add     r3, #2048                   @ 1024*2 One line
+    sub     r3, #32*BPP                 @ Subtract the 32 pixels * 4
+    add     r3, #WIDTH*BPP              @ 1024*2 One line
     
     b       pt3232_loop
 pt3232_end:
@@ -842,8 +907,11 @@ putImage:
     ldr     r3, [r3, #FB_POINTER]       @ Address of the frame buffer
     
     @ Calculate the offset in the FB
-    add     r4, r0, r1, lsl #10         @ r4 = x + (y * 1024)
-    add     r3, r4, lsl #1              @ Half words so we need to mul by 2
+    @add     r4, r0, r1, lsl #10         @ r4 = x + (y * 1024)
+    mov     r4, #WIDTH
+    mla     r4, r1, r4, r0              @ r4 = x + (y * WIDTH)
+    
+    add     r3, r4, lsl #2              @ words so we need to mul by 4
     
     ldr     r0, [r2], #4                @ Grab the width of the image
     ldr     r1, [r2], #4                @ Grab the height of the image
@@ -851,15 +919,18 @@ putImage:
     mov     r6, r0                      @ Counter for horizontal position in img
 pi_loop:
     @ Blit one row of tile data
-    ldrd    r4, [r2], #8                @ Load 4 half-words of tile data
-    strd    r4, [r3], #8                @ Blit 4 half-words of tile data
+    .rept 4
+    ldrh    r4, [r2], #2                @ Load 1 word of tile data
+    bl      conv16_32   @ Convert r4 (not a compliant func)
+    str     r4, [r3], #4
+    .endr
     
     subs    r6, #4                      @ We wrote 4 pixels
     bgt     pi_loop                     @ Repeat till the row is done
     
     @ Then return to the start of the next line
-    sub     r3, r0, lsl #1              @ Subtract the width of the image * 2
-    add     r3, #2048                   @ 1024*2 One line
+    sub     r3, r0, lsl #2              @ Subtract the width of the image * BPP
+    add     r3, #WIDTH*BPP              @ 1024*2 One line
     
     subs    r1, #1                      @ Count down the height
     movne   r6, r0                      @ Reset the horizontal counter
@@ -904,8 +975,11 @@ putImage_double:
     ldr     r3, [r3, #FB_POINTER]       @ Address of the frame buffer
     
     @ Calculate the offset in the FB
-    add     r4, r0, r1, lsl #10         @ r4 = x + (y * 1024)
-    add     r3, r4, lsl #1              @ Half words so we need to mul by 2
+    @add     r4, r0, r1, lsl #10         @ r4 = x + (y * 1024)
+    mov     r4, #WIDTH
+    mla     r4, r1, r4, r0              @ r4 = x + (y * WIDTH)
+    
+    add     r3, r4, lsl #2              @ Half words so we need to mul by 2
     
     ldr     r0, [r2], #4                @ Grab the width of the image
     ldr     r1, [r2], #4                @ Grab the height of the image
@@ -913,29 +987,33 @@ putImage_double:
     mov     r6, r0                      @ Counter for horizontal position in img
 pi_double_loop:
     @ Blit one row of tile data
-    ldrh    r4, [r2], #2                @ Load 1 half-words of tile data
-    strh    r4, [r3], #2                @ Blit 1 half-words of tile data
-    strh    r4, [r3], #2                @ Twice for horizontal scaling
+    
+    ldrh    r4, [r2], #2                @ Load 1 word of tile data
+    bl      conv16_32   @ Convert r4 (not a compliant func)
+    str     r4, [r3], #4
+    str     r4, [r3], #4
     
     subs    r6, #1                      @ We wrote 1 pixel
     bgt     pi_double_loop                      @ Repeat till the row is done
     
     @ Then return to the start of the next line
-    sub     r3, r0, lsl #2              @ Subtract the width of the image * 4
-    add     r3, #2048                   @ 1024*2 One line
+    sub     r3, r0, lsl #3              @ Subtract the width of the image * 8
+    add     r3, #WIDTH*BPP              @ 1024*2 One line
     mov     r6, r0                      @ Reset the horizontal counter
     sub     r2, r0, lsl #1              @ Go back one line in the image
 pi_double_loop2:
     @ Blit the same row again
-    ldrh    r4, [r2], #2                @ Load 1 half-words of tile data
-    strh    r4, [r3], #2                @ Blit 1 half-words of tile data
-    strh    r4, [r3], #2                @ Twice for horizontal scaling
+    ldrh    r4, [r2], #2                @ Load 1 word of tile data
+    bl      conv16_32   @ Convert r4 (not a compliant func)
+    str     r4, [r3], #4
+    str     r4, [r3], #4
+    
     
     subs    r6, #1                      @ We wrote 1 pixel
     bgt     pi_double_loop2                     @ Repeat till the row is done
     
-    sub     r3, r0, lsl #2              @ Subtract the width of the image * 4
-    add     r3, #2048                   @ 1024*2 One line
+    sub     r3, r0, lsl #3              @ Subtract the width of the image * 8
+    add     r3, #WIDTH*BPP              @ 1024*2 One line
     mov     r6, r0                      @ Reset the horizontal counter
     
     subs    r1, #1                      @ Count down the height

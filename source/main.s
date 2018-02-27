@@ -10,34 +10,34 @@
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 .section    .init
-.globl     _start
+
 
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @ Include our global .equ's
 .include "defines.s"
 
-
-_start:
-    b       main
-    
+.globl  main
     
     
 .section .text
 
 main:
     @mov     sp, #0x8000
-    bl      InstallInterrupts
-    bl      initSecondTimer             @ Set up our timer handler
+    @bl      InstallInterrupts
+    @bl      initSecondTimer             @ Set up our timer handler
 test:
 
 @@ Was used during development and handed in with assignment
 @@ jtag.s was removed before posting since the code was notmine
 @   bl      EnableJTAG
-    
+
+    bl      gpio_init
     bl      framebuffer_init
     bl      snes_init    
     bl      clearScr
+
+    
 
     @ Fix a long standing bug where quitting the game required replacing kernel.img
     @ Set the current game state to main menu
